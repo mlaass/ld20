@@ -1,0 +1,3 @@
+[submodule "jo"]
+	path = jo
+	url = http://github.com/jomoho/jomohojs
