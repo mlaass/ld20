@@ -1,8 +1,8 @@
 define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 	
-	jo.Actor = jo.Object.extend({
+	jo.Enemy = jo.Object.extend({
 		
-		joObject: 'Actor',
+		joObject: 'Enemy',
 		
 		init: function(options){
 			this._super(options);
@@ -13,35 +13,12 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 			this.ground = false;
 			this.landed= 200;
 			this.wall=false;
-			if(this.name==='player'){
-				this.anim= new jo.Animation([1,1,1,1,1,1], 48, 48, jo.files.img.player);
-			}else{
-				this.anim= new jo.Animation([1,1,1,1,1,1], 48, 48, jo.files.img.player_shadow);
-
-			}
-			
 		},
 		draw: function(srf){
 			this._super(srf);
 			var p = jo.game.cam.toScreen(this.pos);
-			//srf.rect({fill:this.ground?'#00ff00':'#ff00ff', stroke: 'white'}, p,this.width, this.height);
-			//srf.text({fill:'#999', align: 'left', baseline: 'bottom', font:'12px console', stroke: 0}, p, this.name);
-			var sp = p.minus(new jo.Point(5,11));
-			var v = this.v();
-			var fr= 0;
-			if(!this.ground)
-				fr=1;
-			if(v.x>0.1){
-				fr=2;
-				if(!this.ground)
-					fr=4;
-			}else if(v.x<-0.1){
-				fr=3;
-				if(!this.ground)
-					fr=5;
-			}
-			this.anim.frame= fr;
-			this.anim.draw({frame: fr},sp, jo.screen);
+			srf.rect({fill:this.ground?'#00ff00':'#ff00ff', stroke: 'white'}, p,this.width, this.height);
+			srf.text({fill:'#999', align: 'left', baseline: 'bottom', font:'12px console', stroke: 0}, p, this.name);
 		},
 		update: function(ticks){
 			var pp = this.pos.clone();
