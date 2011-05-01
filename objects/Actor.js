@@ -12,6 +12,7 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 			this.width = this.height = 32;
 			this.ground = false;
 			this.landed= 200;
+			this.wall=false;
 		},
 		draw: function(srf){
 			this._super(srf);
@@ -35,6 +36,9 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 			
 			
 		},
+		v: function(){
+			return this.pos.minus(this.lp);
+		},
 		jump: function(){
 			if(this.ground && this.landed > 25){
 				this.ground = false;
@@ -46,8 +50,8 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 		side: function(dir){
 			this.dir= dir;
 			if(this.ground){
-				this.pos.x+=4*dir;
-			}else{
+				this.pos.x+=6*dir;
+			}else if(this.wall){}else{
 				this.pos.x+=1*dir;
 			}
 		},
