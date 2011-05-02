@@ -3,9 +3,58 @@
     <head>
         <meta charset="utf-8">
         <title>LD20 - </title>
+        <link href='http://fonts.googleapis.com/css?family=Luckiest+Guy' rel='stylesheet' type='text/css'>
         <link rel="stylesheet" media="all" type="text/css" href="css/style.css" />
         <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
-        <script data-main="main" src="jo/lib/requirejs/require.js""></script>
+        <script src="jquery-1.5.2.min.js"></script>
+        <script data-main="main" src="jo/lib/requirejs/require.js"></script>
+        
+         <script type="text/javascript"> 
+         var viewport = function(){
+     		var viewportwidth;
+     		var viewportheight;
+     		
+     		// the more standards compliant browsers (mozilla/netscape/opera/IE7) use window.innerWidth and window.innerHeight
+     		
+     		if (typeof window.innerWidth != 'undefined')
+     		{
+     		     viewportwidth = window.innerWidth,
+     		     viewportheight = window.innerHeight;
+     		}
+     		
+     	       // IE6 in standards compliant mode (i.e. with a valid doctype as the first line in the document)
+     	       
+     		else if (typeof document.documentElement != 'undefined'
+     		    && typeof document.documentElement.clientWidth !=
+     		    'undefined' && document.documentElement.clientWidth != 0)
+     		{
+     		      viewportwidth = document.documentElement.clientWidth,
+     		      viewportheight = document.documentElement.clientHeight;
+     		}
+     		
+     		// older versions of IE
+     		
+     		else
+     		{
+     		      viewportwidth = document.getElementsByTagName('body')[0].clientWidth,
+     		      viewportheight = document.getElementsByTagName('body')[0].clientHeight;
+     		}
+     		return {width: viewportwidth, height: viewportheight};
+     	
+     	};
+     	
+        $(document).ready(function() {
+        	
+        	var pop =$('#popup');
+        	var v= viewport();
+        	pop.css({left: (v.width/2)-160, top: v.height/2 -128});
+        	pop.click(function(){
+        		pop.hide();
+        	});
+       	 });
+                                  
+ 		</script>  
+        
     </head>
     <body> 
         <canvas id="canvas">
@@ -17,7 +66,18 @@
             <a href="http://chrome.google.com">Chrome</a>,
             <a href="http://www.mozilla.com">Firefox</a>, 
             <a href="http://www.apple.com/safari">Safari</a>
+            <a href="http://www.opera.com/">Opera</a>
             </p>			
         </canvas>
+        	<div id="popup">
+        		<h2>Welcome!</h2>
+        		<br/>
+        		<p>
+        		Use the arrow key to navigate and [space] to jump.
+        		</p>
+        		
+        		<span class="sml">(click or [space] to continue)</span>
+
+        </div>
     </body>
 </html>

@@ -13,8 +13,10 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 			this.ground = false;
 			this.landed= 200;
 			this.wall=false;
+			this.rec = false;
+			this.rec_anim= new jo.Animation([1,1,1,1,1,1], 48, 48, jo.files.img.player_record);
 			if(this.name==='player'){
-				this.anim= new jo.Animation([1,1,1,1,1,1], 48, 48, jo.files.img.player);
+				this.anim= new jo.Animation([1,1,1,1,1,1], 48, 48, jo.files.img.player);				
 			}else{
 				this.anim= new jo.Animation([1,1,1,1,1,1], 48, 48, jo.files.img.player_shadow);
 
@@ -28,20 +30,28 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 			//srf.text({fill:'#999', align: 'left', baseline: 'bottom', font:'12px console', stroke: 0}, p, this.name);
 			var sp = p.minus(new jo.Point(5,11));
 			var v = this.v();
-			var fr= 0;
-			if(!this.ground)
-				fr=1;
-			if(v.x>0.1){
-				fr=2;
+			if(this.name==='player'){
+				this.fr= 0;
 				if(!this.ground)
-					fr=4;
-			}else if(v.x<-0.1){
-				fr=3;
-				if(!this.ground)
-					fr=5;
+					this.fr=1;
+				if(v.x>0.1){
+					this.fr=2;
+					if(!this.ground)
+						this.fr=4;
+				}else if(v.x<-0.1){
+					this.fr=3;
+					if(!this.ground)
+						this.fr=5;
+				}
 			}
-			this.anim.frame= fr;
-			this.anim.draw({frame: fr},sp, jo.screen);
+			
+			this.anim.frame = this.fr;
+			if(this.rec){
+				this.rec_anim.draw({frame: this.fr},sp, jo.screen);
+			}else{
+				this.anim.draw({frame: this.fr},sp, jo.screen);
+			}
+			
 		},
 		update: function(ticks){
 			var pp = this.pos.clone();
@@ -68,14 +78,22 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 				this.pos.y -= 14;
 				this.side(this.dir);
 				this.landed=0;
+				jo.files.sfx.ja.play();
 			}
+		},
+		hit: function(){
+				this.ground = false;
+				this.pos.y -= 14;
+				this.side(this.dir);
+				this.landed=0;
+				jo.files.sfx.uh.play();
 		},
 		side: function(dir){
 			this.dir= dir;
 			if(this.ground){
-				this.pos.x+=6*dir;
+				this.pos.x+=4*dir;
 			}else if(this.wall){}else{
-				this.pos.x+=1*dir;
+				this.pos.x+=0.5*dir;
 			}
 		},
 		stand: function(){

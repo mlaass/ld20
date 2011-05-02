@@ -6,6 +6,9 @@ define(['../jo/src/jo','./Actor'], function(jo,Actor){
 		},
 		update: function(ticks){
 			this.lp= this.pos.clone();
+		},
+		hit: function(){
+			
 		}
 	});
 	return jo.Clone;
