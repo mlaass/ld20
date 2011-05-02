@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>LD20 - </title>
+        <title>LD20 - Take this cloning device and multiply yourself</title>
         <link href='http://fonts.googleapis.com/css?family=Luckiest+Guy' rel='stylesheet' type='text/css'>
         <link rel="stylesheet" media="all" type="text/css" href="css/style.css" />
         <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
@@ -45,12 +45,23 @@
      	
         $(document).ready(function() {
         	
-        	var pop =$('#popup');
+        	var pop =$('#popup'), menu=$('#menu');
         	var v= viewport();
         	pop.css({left: (v.width/2)-160, top: v.height/2 -128});
         	pop.click(function(){
         		pop.hide();
         	});
+        	menu.css({left: (v.width/2)-160, top: v.height/2 -128});
+        	menu.click(function(){
+        		menu.hide();
+        	});
+        	
+        	$('#restart_lvl').click(function(){
+        		$jo.game.restartLevel();
+        	});
+			$('#restart_game').click(function(){
+				$jo.game.restart();   		
+			});
        	 });
                                   
  		</script>  
@@ -74,10 +85,16 @@
         		<br/>
         		<p>
         		Use the arrow key to navigate and [space] to jump.
-        		</p>
-        		
+        		</p>        		
         		<span class="sml">(click or [space] to continue)</span>
-
-        </div>
+       		 </div>
+       		 <div id="menu" style="display:none">
+        		<h1>Pause</h1>
+	        		<p>
+	        			<a href="#restart_lvl" id="restart_lvl">Restart</a> the Level.<br/>
+	        			<a href="#restart_game" id="restart_game">Restart</a> the Game.<br/>
+	        		</p>        		
+	        		<span class="sml">(click or [space] to continue)</span>
+       		 </div>
     </body>
 </html>

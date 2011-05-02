@@ -15,7 +15,7 @@ define(['./jo/src/jo',
 	var game = jo.game= new Game({ name: '#canvas', fullscreen: true, fps: 30});
 	
 	jo.edit = false;
-	jo.dev = false;
+	jo.dev = true;
 	game.setup(function(){
 		game.load(['img/test.png', 
 		           'img/player.png',
@@ -172,6 +172,14 @@ define(['./jo/src/jo',
 			}
 		}
 	};
+	game.restartLevel = function(){
+		game.records= [];
+		game.loadLevel(game.level);
+	};
+	game.restart = function(){
+		game.records= [];
+		game.loadLevel(levels['start'], true);
+	};
 
 	game.levelDone = function(){
 		game.loadLevel(levels[game.level.next], true);
@@ -236,9 +244,10 @@ define(['./jo/src/jo',
 		if(jo.input.once('SPACE')){
 			this.player.jump();
 			$('#popup').hide();
+			$('#menu').hide();
 		}
 		if(jo.input.once('ESC')){
-			this.player.jump();			$('#popup').hide();
+			game.menu=$('#menu').show();
 		}
 		if(jo.input.k('RIGHT')){
 			this.player.side(1);
