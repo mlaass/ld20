@@ -15,7 +15,7 @@ define(['./jo/src/jo',
 	var game = jo.game= new Game({ name: '#canvas', fullscreen: true, fps: 30});
 	
 	jo.edit = false;
-	jo.dev = true;
+	jo.dev = false;
 	game.setup(function(){
 		game.load(['img/test.png', 
 		           'img/player.png',

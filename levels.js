@@ -1,7 +1,8 @@
 define(['./jo/src/jo'], function(jo){
 	jo.popup = function(txt){
 		
-		$('#popup').html('<h2>'+txt.head+'</h2><p>'+txt.txt+'</p><span class="sml">(click or [space] to continue)</span>').show();
+		$('#popup').html('<h2>'+txt.head+'</h2><p>'+txt.txt+'</p><span class="sml">(click or [space] to continue)</span>'
+				+'<br/><span class="sml">Press [esc] when in trouble</span>').show();
 	};
 
 	jo.levels={
