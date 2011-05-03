@@ -15,6 +15,7 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 			this.wall=false;
 			this.rec = false;
 			this.rec_anim= new jo.Animation([1,1,1,1,1,1], 48, 48, jo.files.img.player_record);
+			
 			if(this.name==='player'){
 				this.anim= new jo.Animation([1,1,1,1,1,1], 48, 48, jo.files.img.player);				
 			}else{
@@ -26,8 +27,7 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 		draw: function(srf){
 			this._super(srf);
 			var p = jo.game.cam.toScreen(this.pos);
-			//srf.rect({fill:this.ground?'#00ff00':'#ff00ff', stroke: 'white'}, p,this.width, this.height);
-			//srf.text({fill:'#999', align: 'left', baseline: 'bottom', font:'12px console', stroke: 0}, p, this.name);
+
 			var sp = p.minus(new jo.Point(5,11));
 			var v = this.v();
 			if(this.name==='player'){
@@ -51,6 +51,11 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 			}else{
 				this.anim.draw({frame: this.fr},sp, jo.screen);
 			}
+			if(jo.dev){
+				srf.rect({fill:this.ground?'rgba(0,255,0,0.5)':'rgba(255,0,255,0.5)', stroke: 'white'}, p,this.width, this.height);
+				srf.text({fill:'#999', align: 'left', baseline: 'bottom', font:'12px console', stroke: 0}, p, this.name);
+			}
+			
 			
 		},
 		update: function(ticks){
@@ -75,7 +80,7 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 		jump: function(){
 			if(this.ground && this.landed > 25){
 				this.ground = false;
-				this.pos.y -= 14;
+				this.pos.y -= 17;
 				this.side(this.dir);
 				this.landed=0;
 				jo.files.sfx.ja.play();

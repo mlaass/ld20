@@ -45,16 +45,49 @@
      	
         $(document).ready(function() {
         	
-        	var pop =$('#popup'), menu=$('#menu');
+        	var pop =$('.pop'), menu=$('#menu'), about = $('#about'),
+        		music= $('#music'), sound=$('#sound'), info=$('#info');
+        	
+        	function tglMusic(){
+        		
+        	};
+        	music.click(function(){
+        		if(music.hasClass('mute')){
+        			$jo.files.music.unMute();
+        			music.removeClass('mute')
+        		}else{
+        			$jo.files.music.mute();
+        			music.addClass('mute');
+        		}      		
+        		
+        	});
+        	sound.click(function(){
+        		if(sound.hasClass('mute')){
+        			$jo.files.unMute();
+        			sound.removeClass('mute');
+        			music.removeClass('mute')
+        		}else{
+        			$jo.files.mute();
+        			sound.addClass('mute');
+        			music.addClass('mute')
+        		}
+        		
+        		
+        		
+        	});
+        	info.click(function(){
+        		about.show();
+        	});
+        	
         	var v= viewport();
-        	pop.css({left: (v.width/2)-160, top: v.height/2 -128});
-        	pop.click(function(){
-        		pop.hide();
-        	});
-        	menu.css({left: (v.width/2)-160, top: v.height/2 -128});
-        	menu.click(function(){
-        		menu.hide();
-        	});
+        	pop.each(function(event, obj){
+        		var o =$(obj);
+        		o.css({left: (v.width/2)-o.width()/2, top: v.height/2 -o.height()/2});
+        		o.click(function(){
+        			o.hide();
+            	});
+        	})
+        	
         	
         	$('#restart_lvl').click(function(){
         		$jo.game.restartLevel();
@@ -68,6 +101,10 @@
         
     </head>
     <body> 
+    	<div id="info"></div>
+    	<div id="music"></div>
+    	<div id="sound"></div>
+    	
         <canvas id="canvas">
         <p> Unfortunately, your browser is currently unsupported by our web 
             application.  We are sorry for the inconvenience. Please use one of the 
@@ -80,7 +117,7 @@
             <a href="http://www.opera.com/">Opera</a>
             </p>			
         </canvas>
-        	<div id="popup" style="display:none">
+        	<div class="pop" id="popup" style="display:none">
         		<h2>Welcome!</h2>
         		<br/>
         		<p>
@@ -88,13 +125,24 @@
         		</p>        		
         		<span class="sml">(click or [space] to continue)</span>
        		 </div>
-       		 <div id="menu" style="display:none">
+       		 <div class="pop" id="menu" style = "display:none">
         		<h1>Pause</h1>
 	        		<p>
 	        			<a href="#restart_lvl" id="restart_lvl">Restart</a> the Level.<br/>
 	        			<a href="#restart_game" id="restart_game">Restart</a> the Game.<br/>
 	        		</p>        		
 	        		<span class="sml">(click or [space] to continue)</span>
+       		 </div>
+       		 
+       		 <div id="about" class="pop" style="display:none">
+       		 <h1>About</h1> 
+	       		 <p> 
+	       		 	This game was made in 48 hours for the 20th <a href ="http://ludumdare.com/">Ludumdare Competition</a>
+	       		 	It is written in Javascript using the <a href="http://jomoho.com/">Jomoho Game Framework</a>.
+	       		 	to play a more complete version, which was developed after the Competition was over, go to
+	       		 	<a href="http://moritzlaass.com/cloning/">moritzlaass.com/games/cloning</a>
+	       		 </p>
+	       		 <span class="sml">(click to continue)</span>
        		 </div>
     </body>
 </html>

@@ -25,6 +25,21 @@ background:linear-gradient(top, #83d2ff, #0157a0); /* W3C Standard */
  ___background: black; 
 }
 
+.pop{
+	border-radius: 8px;
+	-moz-border-radius: 8px;
+	-webkit-border-radius: 8px;
+	background: rgba(255,255,255,120);
+	color: #333;
+	font-size: 18px;
+	display: inline-block;
+	position: absolute;
+	z-index: 99;
+	padding: 20px;
+	width: 320px;
+	height: 256px;
+	text-align: center;
+}
 #popup{
 	border-radius: 8px;
 	-moz-border-radius: 8px;
@@ -55,6 +70,16 @@ background:linear-gradient(top, #83d2ff, #0157a0); /* W3C Standard */
 	height: 256px;
 	text-align: center;
 }
+#about{
+	
+	font: 16px arial, helvetica, sans;
+	width: 400px;
+	height: 280px;
+	text-align: center;
+}
+#about a{
+	font-weight: bold;
+}
 #menu h2{
 	color: #fffe64;
 }
@@ -68,4 +93,43 @@ font-size: 14px;
 	display: block;
 	margin: 20px 120px;
 	background: url(../img/device.png)
+}
+#sound{
+	width: 32px;
+	height: 32px;
+	display: block;
+	position: absolute;
+	top:16px;
+	right:80px;
+	z-index: 99;
+	background: url(../img/icons.png) -32px 0; 
+}
+#sound.mute{
+
+	background: url(../img/icons.png) -64px 0; 
+}
+
+#music{
+	width: 32px;
+	height: 32px;
+	display: block;
+	position: absolute;
+	top:16px;
+	right:48px;
+	z-index: 99;
+	background: url(../img/icons.png) -96px 0; 
+}
+#music.mute{
+
+	background: url(../img/icons.png) -128px 0; 
+}
+#info{
+	width: 32px;
+	height: 32px;
+	display: block;
+	position: absolute;
+	top:16px;
+	right:16px;
+	z-index: 99;
+	background: url(../img/icons.png) 0 0;
 }

@@ -15,7 +15,7 @@ define(['./jo/src/jo',
 	var game = jo.game= new Game({ name: '#canvas', fullscreen: true, fps: 30});
 	
 	jo.edit = false;
-	jo.dev = false;
+	jo.dev = true;
 	game.setup(function(){
 		game.load(['img/test.png', 
 		           'img/player.png',
@@ -85,6 +85,7 @@ define(['./jo/src/jo',
 		if(jo.edit && jo.dev){
 			for(var i in game.tiles){
 				jo.screen.rect({fill:game.tiles[i].hit,stroke: 'yellow'}, game.cam.toScreen(game.tiles[i].pos), 64,64);
+				jo.screen.text({fill:'green',stroke: 0}, game.cam.toScreen(game.tiles[i].pos), '#'+i);
 			}
 			game.drawEdit();	
 			caption('Edit Mode | FPS: '+jo.screen.fps);
@@ -124,6 +125,8 @@ define(['./jo/src/jo',
 			game.initLevel();
 		}
 		return game.level;
+		game.records = [];
+		game.resetRecording();
 	};
 	game.initLevel= function(){
 		game.records = [];
@@ -148,8 +151,11 @@ define(['./jo/src/jo',
 		//
 		lvl.data = game.map.data;
 		lvl.objects = {};
+
 		for(var i in game.objects){
-			lvl.objects[i] = game.objects[i];
+			if(true || !i.match(/record/)){
+				lvl.objects[i] = game.objects[i];
+			}
 		}
 		lvl.json = JSON.stringify(lvl);
 		
@@ -292,7 +298,8 @@ define(['./jo/src/jo',
 		}
 	};
 	game.handleCollision = function(){	
-		this.mapCollide(game.map, this.get('player'));
+		this.mapCollide3(game.map, this.get('player'));
+		//this.mapCollide(game.map, this.get('player'));
 		
 		for(i in this.enemy){
 			this.mapCollide(game.map, this.get(enemy[i]));
@@ -324,6 +331,189 @@ define(['./jo/src/jo',
 			
 		}
 	};
+	
+	game.mapCollide3 = function(map, actor, n){
+		var tiles = game.tiles = map.getIntersection({x:actor.pos.x, y: actor.pos.y, width: actor.width, height: actor.height});
+		if(tiles.length > 4){
+			alert('this shouldnt happen');
+		}
+		var col=[], ti=[];
+		for(var i in tiles){
+			if(tiles[i].index >= 0){
+				ti.push(i);
+				if(m2d.intersect.boxBox(tiles[i], actor)){
+					if(tiles[i].index == 4){
+						game.levelDone();
+						jo.log('level done');
+					}else{
+						col.push(i);
+					}
+				}
+			}
+		}
+		/**
+		 * |0|1|
+		 * |2|3| tiles is ordered like that
+		 */
+		a_bottom =actor.pos.y+actor.height;
+		a_right = actor.pos.x+actor.width;
+
+		var axis = {N :{axis: 'y', dir: -1, depth: a_bottom-tiles[2].pos.y},
+					S :{axis: 'y', dir:  1, depth: tiles[0].pos.y+tiles[0].height-actor.pos.y},
+					E :{axis: 'x', dir:  1, depth: tiles[0].pos.x+tiles[0].width-actor.pos.x},
+					W :{axis: 'x', dir: -1, depth: a_right-tiles[1].pos.x}};
+		var mov=[];
+
+		//move up
+		if(jo.incl(ti,['2','3'])){
+			mov.push('N');				
+			if(jo.incl(ti,['0'])){
+				mov.push('E');								
+			}
+			if(jo.incl(ti,['1'])){
+				mov.push('W');								
+			}
+		}//move down
+		else if(jo.incl(ti,['0','1'])){
+			mov.push('S');
+			if(jo.incl(ti,['2'])){
+				mov.push('E');								
+			}
+			if(jo.incl(ti,['3'])){
+				mov.push('W');								
+			}
+		}else{
+			//move right
+			if(jo.incl(ti,['0','2'])){
+				mov.push('E');
+			}//move right
+			else if(jo.incl(ti,['1','3'])){
+				mov.push('W');
+			}
+		}
+
+		if(jo.incl(ti,['0'])){ //S or E
+				mov.push((axis.S.depth < axis.E.depth)? 'S': 'E');								
+		}
+		if(jo.incl(ti,['1'])){//S or W
+			mov.push((axis.S.depth < axis.W.depth)? 'S': 'W');							
+		}
+		if(jo.incl(ti,['2'])){//N or E
+			mov.push((axis.N.depth < axis.E.depth)? 'N': 'E');							
+		}
+		if(jo.incl(ti,['3'])){//N or W
+			mov.push((axis.N.depth < axis.W.depth)? 'N': 'W');							
+		}			
+		
+		actor.ground=false;
+		var applied =[];
+		for(var i in mov){
+			if(axis[mov[i]].depth >= 0){				
+				if(!jo.incl(applied,[mov[i]])){
+					actor.pos[axis[mov[i]].axis]+= axis[mov[i]].dir*axis[mov[i]].depth;
+					applied.push(mov[i]);
+				}				
+				if(mov[i]==='N'){
+					actor.ground=true;
+				}
+			}
+		}
+
+		
+		
+	};
+	var col ={
+			int: []//intersections
+		};
+	game.mapCollide2 = function(map, actor, n){
+		game.findIntersections(map,actor);
+		
+		if(col.int.length>0){
+			/*col.int.sort(function(a,b){ 
+				if(a.time === NaN && b.time !== NaN){
+					return -1;
+				}else if(a.time !== NaN && b.time === NaN){
+					return 1;
+				}else if(a.time === NaN && b.time === NaN){
+					return 0;
+				}
+				
+				return a.time-b.time;
+			});
+			*/
+			for(var it=0; i<3; it++){
+				
+			}
+			for(var i in col.int){
+				actor.pos.add(col.int[i].move);				
+			}
+			if(jo.input.k('F')){jo.log(col.int);}	
+			//actor.pos.add(col.int[0].move);
+			if(n<3){
+				//game.mapCollide2(map, actor, n+1);
+			}
+			
+		}
+		var mf = map.getFrame();
+		actor.pos.x = Math.min(mf.width-actor.width,Math.max(0,actor.pos.x));
+		actor.pos.y = Math.min(mf.height,Math.max(0,actor.pos.y));
+		if(actor.pos.y > mf.height-actor.height){
+			game.stopLevel();
+		}
+
+	};
+	game.findIntersections = function(map, actor){
+		col.int=[];
+		var tile = game.tiles = map.getIntersection({x:actor.pos.x, y: actor.pos.y, width: actor.width, height: actor.height});
+		groundhit=false;
+		for(var i in tile){
+			if(tile[i].index >= 0 && m2d.intersect.boxBox(tile[i], actor)){
+				if(tile[i].index == 4){
+					game.levelDone();
+					jo.log('level done');
+				}else{
+					var v= actor.v();
+					
+					if(actor.lp.y+actor.height> tile[i].pos.y && actor.lp.y<tile[i].pos.y+tile[i].height){//horizontal
+						if(actor.lp.x+actor.width <= tile[i].pos.x && v.x>=0 ){//from left
+							var d = (actor.pos.x+actor.width)-tile[i].pos.x;
+							var t = d/v.x;
+							col.int.push({tile: tile[i], time: 1-t, move: new jo.Point(-d,0), d: d, v: v, actor: actor});
+						}
+						
+						if(actor.lp.x >= tile[i].pos.x+tile[i].width && v.x<=0){//from right
+							var d = (actor.pos.x)-(tile[i].pos.x+tile[i].width);
+							var t = d/v.x;
+							col.int.push({tile: tile[i], time: 1-t, move: new jo.Point(-d,0), type:'right'});
+						}
+					}
+					
+					if(actor.lp.x+actor.width> tile[i].pos.x && actor.lp.x<tile[i].pos.x+tile[i].width){//vertical
+						
+						if(actor.lp.y+actor.height <= tile[i].pos.y && v.y>=0){//from top
+							var d = (actor.pos.y+actor.height)-tile[i].pos.y;
+							var t = d/v.y;
+								col.int.push({tile: tile[i], time: 1-t, move: new jo.Point(0,-d), type:'top'});
+							
+							
+							groundhit=true;
+						}
+						
+						if(actor.lp.y >= tile[i].pos.y+tile[i].height && v.y<0){//from bottom
+							var d = (actor.pos.y)-(tile[i].pos.y+tile[i].height);
+							var t = d/v.y;
+							col.int.push({tile: tile[i], time: 1-t, move: new jo.Point(0,-d)});
+						}
+					}
+					
+					
+				}
+			}
+		}
+		actor.ground=groundhit;
+	};
+	
+	
 	game.mapCollide = function(map, actor){
 		var tiles = game.tiles = map.getIntersection({x:actor.pos.x, y: actor.pos.y, width: actor.width, height: actor.height});
 		var wallhit = false, groundhit=false, ceilhit=false;;
@@ -369,6 +559,5 @@ define(['./jo/src/jo',
 		if(actor.pos.y > mf.height-actor.height){
 			game.stopLevel();
 		}
-
 	};
 });
