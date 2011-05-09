@@ -39,12 +39,17 @@ define(['./jo/src/jo',
 		
 	});
 	var start = function(){
-		game.state = 'start';
-		game.cam =new jo.Camera();
+
 		
 	};
 	game.ready(function(){
-		start();
+		if(jo.dev){
+			jo.files.mute();
+		}
+		
+		game.state = 'start';
+		game.cam =new jo.Camera();
+		
 		game.ts = new jo.TileSet([0,1,2,3, [{i:4, t:800},{i:5, t: 600}]], 64,64, jo.files.img.tileset);
 		game.map = new Map(game.ts, 128, 32, null);
 		for(var i=0; i< 10; i++){
@@ -56,9 +61,10 @@ define(['./jo/src/jo',
 		game.add(new Actor({name: 'player', position: new jo.Point(100, 64)}), 'player');
 		game.records= [];
 		game.loadLevel(levels['start'], true);
-		if(! jo.dev){
-			jo.files.music['LD20-replay_2'].play();
-		}
+		
+		jo.files.music['LD20-replay_2'].play();
+		
+
 		game.device= new jo.Animation([1,1,1], 80,42, jo.files.img.device);
 
 	});
@@ -73,7 +79,7 @@ define(['./jo/src/jo',
 			this.adjustcam();
 		}
 		var p = game.cam.toWorld();
-		game.map.draw({x: p.x, y: p.y, width: jo.screen.width, height:jo.screen.height}, new jo.Point(0,0), jo.screen);
+		game.map.draw({x: p.x, y: p.y, width: jo.screen.width, height:jo.screen.height, grid: jo.edit}, new jo.Point(0,0), jo.screen);
 		if(game.level.device ){
 			var fr = 0;
 			if(recording){
@@ -88,7 +94,7 @@ define(['./jo/src/jo',
 				jo.screen.text({fill:'green',stroke: 0}, game.cam.toScreen(game.tiles[i].pos), '#'+i);
 			}
 			game.drawEdit();	
-			caption('Edit Mode | FPS: '+jo.screen.fps);
+			caption('Edit Mode | FPS: '+jo.screen.realFps);
 			jo.files.img.test.draw({angle: (jo.screen.frames/60)*Math.PI,pivot: 'center'}, new jo.Point(32, 32), jo.screen);
 		}		
 	});
@@ -104,10 +110,6 @@ define(['./jo/src/jo',
 				Math.min(mf.width - jo.screen.width, Math.max(0,game.cam.x)),									
 				Math.min(mf.height - jo.screen.height, Math.max(-128, game.cam.y))
 		));
-		
-		
-		//game.cam.x = Math.min(mf.width - jo.screen.width, Math.max(mf.x, game.cam.x));
-		//game.cam.y = Math.min(mf.height - jo.screen.height, Math.max(mf.y, game.cam.y));
 	};
 	game.drawEdit= function(){
 		game.map.tileSet.draw({tile: pal}, new jo.Point(jo.screen.width-96, 32), jo.screen);
@@ -283,8 +285,25 @@ define(['./jo/src/jo',
 		if(jo.input.once('R') ){
 			game.resetRecording();
 		}
-		if(jo.input.k('MOUSE1') && (jo.input.k('CTRL')|| jo.input.k('ALT')) ){
-			game.cam.subtract(jo.input.mouseMovement());
+		if(jo.input.once('F') ){
+			game.freeze = !game.freeze;
+		}
+		if(jo.input.k('CTRL')|| jo.input.k('ALT')){
+			 if(jo.input.k('MOUSE1') ){
+				game.cam.subtract(jo.input.mouseMovement());
+			 }
+			 if(jo.input.k('UP')){
+				 game.map.shift(0,-1,{index: -1});
+			 }
+			 if(jo.input.k('DOWN')){
+				 game.map.shift(0,1,{index: -1});
+			 }
+			 if(jo.input.k('LEFT')){
+				 game.map.shift(-1,0,{index: -1});
+			 }
+			 if(jo.input.k('RIGHT')){
+				 game.map.shift(1,0,{index: -1});
+			 }
 		}else if(jo.input.k('MOUSE1')){
 			var p=game.cam.toMap(jo.input.mouse);
 			game.map.put(p.x, p.y, {index: pal});
@@ -304,12 +323,73 @@ define(['./jo/src/jo',
 		for(i in this.enemy){
 			this.mapCollide(game.map, this.get(enemy[i]));
 		}
+		var others= [];
+		for(i in this.records){
+			if(i != current_rec){
+				others.push(this.get('record'+i));
+			}			
+		}
+		game.actorCollide2(this.get('player'), others);
 		
+		/**
 		for(i in this.records){
 			if(i != current_rec){
 				game.actorCollide(this.get('player'), this.get('record'+i));
 			}			
 		}
+		*/
+	};
+	game.actorCollide2 = function(actor, others){
+		
+		
+		for(var i in others){
+			var mov = [];
+			if(m2d.intersect.boxBox(others[i], actor)){
+				var ac = actor.pos.plus(jo.point(actor.width/2, actor.height/2)),
+				oc = others[i].pos.plus(jo.point(others[i].width/2, others[i].height/2));
+				var x, y;
+				if(ac.y <= oc.y){
+					y = {mov: 'N', axis: 'y', dir: -1, depth: actor.pos.y+actor.height-others[i].pos.y };
+				}
+				else if(ac.y > oc.y){
+					y = {mov: 'S', axis: 'y',dir:  1, depth:others[i].pos.y+others[i].height-actor.pos.y};
+				}
+				
+				if(ac.x <= oc.x){
+					x = {mov: 'W', axis: 'x',dir: -1, depth:actor.pos.x+actor.width-others[i].pos.x };
+				}
+				else if(ac.x >oc.x){
+					x = {mov: 'E', axis: 'x',dir:  1, depth:others[i].pos.x+others[i].width-actor.pos.x };
+				}
+				
+				if(x.depth> y.depth && y.depth>=0){
+					mov.push(y);
+				}else if(x.depth>0){
+					mov.push(x);
+				}
+			}
+			if(mov.length>0){
+				var min = mov[0];
+				//test and find
+				for(var i in mov){
+					if(min.depth > mov[i].depth){
+						min = mov[i].depth;
+					}				
+				}
+				actor.pos[min.axis]+= min.depth*min.dir;
+				if(min.mov==='N'){
+					actor.ground=true;
+				}
+			}
+				
+		}
+		
+
+
+
+
+		
+		
 	};
 	game.actorCollide = function(actor, b){
 		if(m2d.intersect.boxBox(b, actor)){
@@ -332,232 +412,121 @@ define(['./jo/src/jo',
 		}
 	};
 	
-	game.mapCollide3 = function(map, actor, n){
+	game.mapCollide3 = function(map, actor){
+		
+		var mf = map.getFrame();
+		actor.pos.x = Math.min(mf.width-actor.width,Math.max(0,actor.pos.x));
+		actor.pos.y = Math.min(mf.height,Math.max(0,actor.pos.y));
+		if(actor.pos.y > mf.height-actor.height){
+			game.stopLevel();
+		}
+		
 		var tiles = game.tiles = map.getIntersection({x:actor.pos.x, y: actor.pos.y, width: actor.width, height: actor.height});
-		if(tiles.length > 4){
-			alert('this shouldnt happen');
-		}
-		var col=[], ti=[];
-		for(var i in tiles){
-			if(tiles[i].index >= 0){
-				ti.push(i);
-				if(m2d.intersect.boxBox(tiles[i], actor)){
-					if(tiles[i].index == 4){
-						game.levelDone();
-						jo.log('level done');
-					}else{
-						col.push(i);
-					}
-				}
-			}
-		}
-		/**
-		 * |0|1|
-		 * |2|3| tiles is ordered like that
-		 */
-		a_bottom =actor.pos.y+actor.height;
-		a_right = actor.pos.x+actor.width;
-
-		var axis = {N :{axis: 'y', dir: -1, depth: a_bottom-tiles[2].pos.y},
-					S :{axis: 'y', dir:  1, depth: tiles[0].pos.y+tiles[0].height-actor.pos.y},
-					E :{axis: 'x', dir:  1, depth: tiles[0].pos.x+tiles[0].width-actor.pos.x},
-					W :{axis: 'x', dir: -1, depth: a_right-tiles[1].pos.x}};
-		var mov=[];
-
-		//move up
-		if(jo.incl(ti,['2','3'])){
-			mov.push('N');				
-			if(jo.incl(ti,['0'])){
-				mov.push('E');								
-			}
-			if(jo.incl(ti,['1'])){
-				mov.push('W');								
-			}
-		}//move down
-		else if(jo.incl(ti,['0','1'])){
-			mov.push('S');
-			if(jo.incl(ti,['2'])){
-				mov.push('E');								
-			}
-			if(jo.incl(ti,['3'])){
-				mov.push('W');								
-			}
+		if(tiles.length != 4){//be extra sure about it 
+			//game.stopLevel();
 		}else{
-			//move right
-			if(jo.incl(ti,['0','2'])){
-				mov.push('E');
-			}//move right
-			else if(jo.incl(ti,['1','3'])){
-				mov.push('W');
-			}
-		}
-
-		if(jo.incl(ti,['0'])){ //S or E
-				mov.push((axis.S.depth < axis.E.depth)? 'S': 'E');								
-		}
-		if(jo.incl(ti,['1'])){//S or W
-			mov.push((axis.S.depth < axis.W.depth)? 'S': 'W');							
-		}
-		if(jo.incl(ti,['2'])){//N or E
-			mov.push((axis.N.depth < axis.E.depth)? 'N': 'E');							
-		}
-		if(jo.incl(ti,['3'])){//N or W
-			mov.push((axis.N.depth < axis.W.depth)? 'N': 'W');							
-		}			
-		
-		actor.ground=false;
-		var applied =[];
-		for(var i in mov){
-			if(axis[mov[i]].depth >= 0){				
-				if(!jo.incl(applied,[mov[i]])){
-					actor.pos[axis[mov[i]].axis]+= axis[mov[i]].dir*axis[mov[i]].depth;
-					applied.push(mov[i]);
-				}				
-				if(mov[i]==='N'){
-					actor.ground=true;
+			var col=[], ti=[];
+			for(var i in tiles){
+				if(tiles[i].index >= 0){
+					ti.push(i);
+					if(m2d.intersect.boxBox(tiles[i], actor)){
+						if(tiles[i].index == 4){
+							game.levelDone();
+							jo.log('level done');
+						}else{
+							col.push(i);	
+								tiles[i].hit = "yellow";
+						}
+					}
 				}
 			}
-		}
+			/**
+			 * |0|1|
+			 * |2|3| tiles is ordered like that
+			 */
+			a_bottom =actor.pos.y+actor.height;
+			a_right = actor.pos.x+actor.width;
 
-		
-		
-	};
-	var col ={
-			int: []//intersections
-		};
-	game.mapCollide2 = function(map, actor, n){
-		game.findIntersections(map,actor);
-		
-		if(col.int.length>0){
-			/*col.int.sort(function(a,b){ 
-				if(a.time === NaN && b.time !== NaN){
-					return -1;
-				}else if(a.time !== NaN && b.time === NaN){
-					return 1;
-				}else if(a.time === NaN && b.time === NaN){
-					return 0;
-				}
-				
-				return a.time-b.time;
-			});
-			*/
-			for(var it=0; i<3; it++){
-				
-			}
-			for(var i in col.int){
-				actor.pos.add(col.int[i].move);				
-			}
-			if(jo.input.k('F')){jo.log(col.int);}	
-			//actor.pos.add(col.int[0].move);
-			if(n<3){
-				//game.mapCollide2(map, actor, n+1);
-			}
+			var axis = {N :{axis: 'y', dir: -1, depth: a_bottom-tiles[2].pos.y},
+						S :{axis: 'y', dir:  1, depth: tiles[0].pos.y+tiles[0].height-actor.pos.y},
+						E :{axis: 'x', dir:  1, depth: tiles[0].pos.x+tiles[0].width-actor.pos.x},
+						W :{axis: 'x', dir: -1, depth: a_right-tiles[1].pos.x}};
+			var mov=[];
 			
-		}
-		var mf = map.getFrame();
-		actor.pos.x = Math.min(mf.width-actor.width,Math.max(0,actor.pos.x));
-		actor.pos.y = Math.min(mf.height,Math.max(0,actor.pos.y));
-		if(actor.pos.y > mf.height-actor.height){
-			game.stopLevel();
-		}
-
-	};
-	game.findIntersections = function(map, actor){
-		col.int=[];
-		var tile = game.tiles = map.getIntersection({x:actor.pos.x, y: actor.pos.y, width: actor.width, height: actor.height});
-		groundhit=false;
-		for(var i in tile){
-			if(tile[i].index >= 0 && m2d.intersect.boxBox(tile[i], actor)){
-				if(tile[i].index == 4){
-					game.levelDone();
-					jo.log('level done');
+			if(ti.length>=2){
+				//move up
+				if(jo.incl(ti,['2','3'])){
+					mov.push('N');				
+					if(jo.incl(ti,['0'])){
+						mov.push('E');								
+					}
+					if(jo.incl(ti,['1'])){
+						mov.push('W');								
+					}
+				}//move down
+				else if(jo.incl(ti,['0','1'])){
+					mov.push('S');
+					if(jo.incl(ti,['2'])){
+						mov.push('E');								
+					}
+					if(jo.incl(ti,['3'])){
+						mov.push('W');								
+					}
 				}else{
-					var v= actor.v();
 					
-					if(actor.lp.y+actor.height> tile[i].pos.y && actor.lp.y<tile[i].pos.y+tile[i].height){//horizontal
-						if(actor.lp.x+actor.width <= tile[i].pos.x && v.x>=0 ){//from left
-							var d = (actor.pos.x+actor.width)-tile[i].pos.x;
-							var t = d/v.x;
-							col.int.push({tile: tile[i], time: 1-t, move: new jo.Point(-d,0), d: d, v: v, actor: actor});
-						}
-						
-						if(actor.lp.x >= tile[i].pos.x+tile[i].width && v.x<=0){//from right
-							var d = (actor.pos.x)-(tile[i].pos.x+tile[i].width);
-							var t = d/v.x;
-							col.int.push({tile: tile[i], time: 1-t, move: new jo.Point(-d,0), type:'right'});
-						}
-					}
-					
-					if(actor.lp.x+actor.width> tile[i].pos.x && actor.lp.x<tile[i].pos.x+tile[i].width){//vertical
-						
-						if(actor.lp.y+actor.height <= tile[i].pos.y && v.y>=0){//from top
-							var d = (actor.pos.y+actor.height)-tile[i].pos.y;
-							var t = d/v.y;
-								col.int.push({tile: tile[i], time: 1-t, move: new jo.Point(0,-d), type:'top'});
-							
-							
-							groundhit=true;
-						}
-						
-						if(actor.lp.y >= tile[i].pos.y+tile[i].height && v.y<0){//from bottom
-							var d = (actor.pos.y)-(tile[i].pos.y+tile[i].height);
-							var t = d/v.y;
-							col.int.push({tile: tile[i], time: 1-t, move: new jo.Point(0,-d)});
+					if(jo.incl(ti,['0','2'])){//move right
+						mov.push('E');
+					}//move left
+					else if(jo.incl(ti,['1','3'])){
+						mov.push('W');
+					}else{
+						if(jo.incl(ti, ['0','3'])){
+							if(m2d.intersect.boxBox(tiles[1], {pos: actor.lp, width: actor.width, height: actor.height })){//topright
+								mov.push('N');
+								mov.push('E');
+							}else{
+								mov.push('S');
+								mov.push('W');
+							}
+						}else if(jo.incl(ti, ['1','2'])){
+							if(m2d.intersect.boxBox(tiles[0], {pos: actor.lp, width: actor.width, height: actor.height })){//topright
+								mov.push('N');
+								mov.push('W');
+							}else{
+								mov.push('S');
+								mov.push('E');
+							}
 						}
 					}
-					
-					
 				}
-			}
-		}
-		actor.ground=groundhit;
-	};
-	
-	
-	game.mapCollide = function(map, actor){
-		var tiles = game.tiles = map.getIntersection({x:actor.pos.x, y: actor.pos.y, width: actor.width, height: actor.height});
-		var wallhit = false, groundhit=false, ceilhit=false;;
-		
-		for(var i in tiles){
-			if(tiles[i].index >= 0 && m2d.intersect.boxBox(tiles[i], actor)){				
-				if(tiles[i].index == 4){
-					game.levelDone();
-					jo.log('level done');
-				}else{
-					
-					tiles[i].hit = "yellow";
-					if(tiles[i].pos.y < actor.pos.y+(actor.height*1.1) && actor.v().y>=0 && actor.pos.y <tiles[i].pos.y
-							&& (actor.pos.x+actor.width >tiles[i].pos.x && actor.pos.x <tiles[i].pos.x+tiles[i].width)){
-						actor.pos.y = tiles[i].pos.y - actor.height;
-						groundhit=true;
-					}
-					else if(tiles[i].pos.y+tiles[i].height > actor.pos.y && actor.pos.y+actor.height >tiles[i].pos.y+tiles[i].height 
-							&& !actor.wall && (actor.pos.x+actor.width <tiles[i].pos.x+tiles[i].width || actor.pos.x >tiles[i].pos.x)){
-						//actor.pos.y = tiles[i].pos.y + tiles[i].height;
-						ceilhit=true;
-					}else if(tiles[i].pos.y+tiles[i].height > actor.pos.y && tiles[i].pos.y < actor.pos.y+(actor.height ) ){
-						if(tiles[i].pos.x < actor.pos.x+actor.width && actor.v().x>0 ){
-							actor.pos.x = tiles[i].pos.x-actor.width;
-							wallhit = true;
-						}else if(tiles[i].pos.x+tiles[i].width > actor.pos.x && actor.v().x<0){
-							actor.pos.x = tiles[i].pos.x+tiles[i].width;
-							wallhit = true;
-						}
-					}	
-				}				
 			}else{
-				tiles[i].hit=0;
-				
+				if(jo.incl(ti,['0'])){ //S or E
+					mov.push((axis.S.depth < axis.E.depth)? 'S': 'E');								
+				}
+				if(jo.incl(ti,['1'])){//S or W
+					mov.push((axis.S.depth < axis.W.depth)? 'S': 'W');							
+				}
+				if(jo.incl(ti,['2'])){//N or E
+					mov.push((axis.N.depth < axis.E.depth)? 'N': 'E');							
+				}
+				if(jo.incl(ti,['3'])){//N or W
+					mov.push((axis.N.depth < axis.W.depth)? 'N': 'W');							
+				}	
 			}
-		}
-		actor.wall = wallhit;
-		actor.ground=groundhit;
-		
-		var mf = map.getFrame();
-		actor.pos.x = Math.min(mf.width-actor.width,Math.max(0,actor.pos.x));
-		actor.pos.y = Math.min(mf.height,Math.max(0,actor.pos.y));
-		if(actor.pos.y > mf.height-actor.height){
-			game.stopLevel();
+			actor.ground=false;
+			var applied =[];
+			for(var i in mov){
+				if(axis[mov[i]].depth >= 0){				
+					if(!jo.incl(applied,[mov[i]])){
+						actor.pos[axis[mov[i]].axis]+= axis[mov[i]].dir*axis[mov[i]].depth;
+						applied.push(mov[i]);
+					}				
+					if(mov[i]==='N'){
+						actor.ground=true;
+					}
+				}
+			}	
 		}
 	};
+
 });
