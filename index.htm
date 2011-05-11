@@ -2,28 +2,23 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>LD20 - Take this cloning device and multiply yourself</title>
+        <title>Replay</title>
         <link href='http://fonts.googleapis.com/css?family=Luckiest+Guy' rel='stylesheet' type='text/css'>
         <link rel="stylesheet" media="all" type="text/css" href="css/style.css" />
         <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
         <script src="jquery-1.5.2.min.js"></script>
         <script data-main="main" src="jo/lib/requirejs/require.js"></script>
-        
          <script type="text/javascript"> 
          var viewport = function(){
      		var viewportwidth;
      		var viewportheight;
-     		
      		// the more standards compliant browsers (mozilla/netscape/opera/IE7) use window.innerWidth and window.innerHeight
-     		
      		if (typeof window.innerWidth != 'undefined')
      		{
      		     viewportwidth = window.innerWidth,
      		     viewportheight = window.innerHeight;
      		}
-     		
-     	       // IE6 in standards compliant mode (i.e. with a valid doctype as the first line in the document)
-     	       
+			// IE6 in standards compliant mode (i.e. with a valid doctype as the first line in the document)
      		else if (typeof document.documentElement != 'undefined'
      		    && typeof document.documentElement.clientWidth !=
      		    'undefined' && document.documentElement.clientWidth != 0)
@@ -31,26 +26,59 @@
      		      viewportwidth = document.documentElement.clientWidth,
      		      viewportheight = document.documentElement.clientHeight;
      		}
-     		
-     		// older versions of IE
-     		
+     		// older versions of IE    		
      		else
      		{
      		      viewportwidth = document.getElementsByTagName('body')[0].clientWidth,
      		      viewportheight = document.getElementsByTagName('body')[0].clientHeight;
      		}
      		return {width: viewportwidth, height: viewportheight};
-     	
      	};
      	
         $(document).ready(function() {
         	
         	var pop =$('.pop'), menu=$('#menu'), about = $('#about'),
-        		music= $('#music'), sound=$('#sound'), info=$('#info');
+        		music= $('#music'), sound=$('#sound'), info=$('#info'),
+        		tools= $('#tools li'), settings =$('#tools #settings');
         	
-        	function tglMusic(){
-        		
-        	};
+        	if($jo.dev === true){
+        		$('#tools').show();
+        		$('#settings-pop').hide();
+        		$jo.tool='tile';
+        	}else{
+        		$('#tools').hide();
+        		$('#settings-pop').hide();
+        	}        	
+        	tools.each(function(event, obj){
+        		$(obj).html('<img src="img/empty.png" width="16" height="16" alt="'+$(obj).attr('id')+'"/>');
+        		$(obj).click(function(){
+        			tools.each(function(ev, obj2){
+        				$(obj2).removeClass('active');
+        			})
+        			$(obj).addClass('active');
+        			$jo.tool= $(obj).attr('id')
+        		});
+        	});
+        	settings.click(function(){
+        		var inputs= $('#settings-pop input');
+        		inputs.each(function(ev, obj){
+        			var o = $(this);
+        			o.val($jo.game.map[o.attr('id')]+'');
+        		});
+        		$('#settings-pop').show();
+        	});
+        	$('#apply').click(function(e){
+        		var w=$('#width').val(), h=$('#height').val();
+        		w= parseInt(w), h=parseInt(h);
+        		$jo.game.map.resize(w,h, {index: -1});
+
+        		$('#settings-pop').hide();
+
+        	});
+			$('#cancel').click(function(e){
+				$('#settings-pop').hide();
+        	});
+        	
         	music.click(function(){
         		if(music.hasClass('mute')){
         			$jo.files.music.unMute();
@@ -58,9 +86,9 @@
         		}else{
         			$jo.files.music.mute();
         			music.addClass('mute');
-        		}      		
-        		
+        		}              		
         	});
+        	
         	sound.click(function(){
         		if(sound.hasClass('mute')){
         			$jo.files.unMute();
@@ -71,9 +99,6 @@
         			sound.addClass('mute');
         			music.addClass('mute')
         		}
-        		
-        		
-        		
         	});
         	info.click(function(){
         		about.show();
@@ -83,11 +108,19 @@
         	pop.each(function(event, obj){
         		var o =$(obj);
         		o.css({left: (v.width/2)-o.width()/2, top: v.height/2 -o.height()/2});
-        		o.click(function(){
-        			o.hide();
-            	});
+        		if(!o.hasClass('clickable')){
+        			o.click(function(){
+            			o.hide();
+                	});
+        		}        		
         	})
-        	
+        	$(window).resize(function(){
+    			var v= viewport();
+            	pop.each(function(event, obj){
+            		var o =$(obj);
+            		o.css({left: (v.width/2)-o.width()/2, top: v.height/2 -o.height()/2});
+            	});        		
+        	});
         	
         	$('#restart_lvl').click(function(){
         		$jo.game.restartLevel();
@@ -98,7 +131,8 @@
        	 });
                                   
  		</script>  
-        <script type="text/javascript">		
+ 		<!-- 
+ 		        <script type="text/javascript">		
 		  var _gaq = _gaq || [];
 		  _gaq.push(['_setAccount', 'UA-23152545-1']);
 		  _gaq.push(['_trackPageview']);
@@ -110,12 +144,38 @@
 		  })();
 		
 		</script>
+ 		 -->
+
     </head>
     <body> 
     	<div id="info"></div>
     	<div id="music"></div>
     	<div id="sound"></div>
     	
+    	<ul id="tools">
+    		<li id="drag"></li>
+        	<li id="pick" ></li>
+        	<li id="tile" class="active"></li>   
+        	<li id="settings"></li>      	
+        </ul>
+       	<form id="settings-pop" class="pop clickable">
+       		<fieldset>
+	       		<label for="name">name:</label>
+	       		<input id="name"/>
+       		</fieldset>
+       		<fieldset>
+	       		<label for="width">width:</label>
+	       		<input id="width"/>
+       		</fieldset>
+       		<fieldset>
+	       		<label for="height">height:</label>
+	       		<input id="height"/>
+       		</fieldset>
+       		<fieldset class="end">
+       			<a href="#" id="cancel">Cancel</a>
+       			<a href="#" id="apply">Apply</a>
+       		</fieldset>       		
+       	</form>
         <canvas id="canvas">
         <p> Unfortunately, your browser is currently unsupported by our web 
             application.  We are sorry for the inconvenience. Please use one of the 
@@ -128,32 +188,34 @@
             <a href="http://www.opera.com/">Opera</a>
             </p>			
         </canvas>
-        	<div class="pop" id="popup" style="display:none">
-        		<h2>Welcome!</h2>
-        		<br/>
+
+       	<div class="pop" id="popup" style="display:none">
+       		<h2>Welcome!</h2>
+       		<br/>
+       		<p>
+       		Use the arrow key to navigate and [space] to jump.
+       		</p>        		
+       		<span class="sml">(click or [space] to continue)</span>
+      	</div>
+      	
+      	<div class="pop" id="menu" style = "display:none">
+       		<h1>Pause</h1>
         		<p>
-        		Use the arrow key to navigate and [space] to jump.
+        			<a href="#restart_lvl" id="restart_lvl">Restart</a> the Level.<br/>
+        			<a href="#restart_game" id="restart_game">Restart</a> the Game.<br/>
         		</p>        		
         		<span class="sml">(click or [space] to continue)</span>
-       		 </div>
-       		 <div class="pop" id="menu" style = "display:none">
-        		<h1>Pause</h1>
-	        		<p>
-	        			<a href="#restart_lvl" id="restart_lvl">Restart</a> the Level.<br/>
-	        			<a href="#restart_game" id="restart_game">Restart</a> the Game.<br/>
-	        		</p>        		
-	        		<span class="sml">(click or [space] to continue)</span>
-       		 </div>
-       		 
-       		 <div id="about" class="pop" style="display:none">
-       		 <h1>About</h1> 
-	       		 <p> 
-	       		 	This game was originally made in 48 hours for the 20th <a href ="http://ludumdare.com/">Ludumdare Competition</a>
-	       		 	It is written in JavaScript using the <a href="http://jomoho.com/">Jomoho Game Framework</a>.
-	       		 	To play the original competition entry, go to
-	       		 	<a href="http://moritzlaass.com/cloning/">moritzlaass.com/ld20</a>
-	       		 </p>
-	       		 <span class="sml">(click to continue)</span>
-       		 </div>
+      	</div>
+      		 
+      	<div id="about" class="pop" style="display:none">
+      		 <h1>About</h1> 
+       		 <p> 
+       		 	This game was originally made in 48 hours for the 20th <a href ="http://ludumdare.com/">Ludumdare Competition</a>
+       		 	It is written in JavaScript using the <a href="http://jomoho.com/">Jomoho Game Framework</a>.
+       		 	To play the original competition entry, go to
+       		 	<a href="http://moritzlaass.com/cloning/">moritzlaass.com/ld20</a>
+       		 </p>
+       		 <span class="sml">(click to continue)</span>
+      	</div>
     </body>
 </html>

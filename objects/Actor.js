@@ -47,6 +47,7 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 			
 			this.anim.frame = this.fr;
 			if(this.rec){
+				this.rec_anim.frame = this.fr;
 				this.rec_anim.draw({frame: this.fr},sp, jo.screen);
 			}else{
 				this.anim.draw({frame: this.fr},sp, jo.screen);

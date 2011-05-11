@@ -29,6 +29,7 @@ define(['./jo/src/jo',
 		           'sfx/uh.wav',
 		           'sfx/woo.wav',
 		           'music/LD20-replay_2.mp3']);
+		
 		jo.input.reserved.push(jo.input.CTRL);
 		jo.input.reserved.push(jo.input.ALT);
 		jo.input.reserved.push(jo.input.SHIFT);
@@ -62,11 +63,9 @@ define(['./jo/src/jo',
 		game.records= [];
 		game.loadLevel(levels['start'], true);
 		
-		jo.files.music['LD20-replay_2'].play();
-		
+		jo.files.music['LD20-replay_2'].play();		
 
 		game.device= new jo.Animation([1,1,1], 80,42, jo.files.img.device);
-
 	});
 
 	
@@ -83,20 +82,25 @@ define(['./jo/src/jo',
 		if(game.level.device ){
 			var fr = 0;
 			if(recording){
-				fr=2;
+				fr = 2;
 			}
 			game.device.draw({frame: fr}, new jo.Point(32, 32), jo.screen);
 		}
 		
 		if(jo.edit && jo.dev){
+			caption('Edit Mode | FPS: '+jo.screen.realFps);
+			jo.files.img.test.draw({angle: (jo.screen.frames/60)*Math.PI,pivot: 'center'}, new jo.Point(32, 32), jo.screen);
+			
 			for(var i in game.tiles){
 				jo.screen.rect({fill:game.tiles[i].hit,stroke: 'yellow'}, game.cam.toScreen(game.tiles[i].pos), 64,64);
 				jo.screen.text({fill:'green',stroke: 0}, game.cam.toScreen(game.tiles[i].pos), '#'+i);
 			}
 			game.drawEdit();	
-			caption('Edit Mode | FPS: '+jo.screen.realFps);
-			jo.files.img.test.draw({angle: (jo.screen.frames/60)*Math.PI,pivot: 'center'}, new jo.Point(32, 32), jo.screen);
-		}		
+			
+		}else if(jo.dev){
+			caption('Play Mode | FPS: '+jo.screen.realFps);
+			jo.files.img.test.draw({pivot: 'center'}, new jo.Point(32, 32), jo.screen);
+		}
 	});
 	game.adjustcam = function(){
 		game.centerCam(this.get('player').pos.clone());
@@ -122,7 +126,7 @@ define(['./jo/src/jo',
 		game.objects = lvl.objects;
 		
 		game.level = level;
-		game.level.lvl= lvl;
+		game.level.lvl = lvl;
 		if(init){
 			game.initLevel();
 		}
@@ -169,6 +173,7 @@ define(['./jo/src/jo',
 		game.loadLevel(game.level, false);
 		game.enemies = [];
 		game.switches = [];
+ 
 		for(var i in game.records){
 			game.add(new Clone({name: 'record'+i, position: game.records[i][0].pos.clone()}), 'record'+i);
 		}
@@ -181,7 +186,7 @@ define(['./jo/src/jo',
 		}
 	};
 	game.restartLevel = function(){
-		game.records= [];
+		game.records = [];
 		game.loadLevel(game.level);
 	};
 	game.restart = function(){
@@ -194,6 +199,7 @@ define(['./jo/src/jo',
 		jo.cookies.setCookie('LD20Balooga03',game.level.next, 60);
 		jo.files.sfx.woo.play();
 	};
+	
 	var recording = false;
 	var current_rec = 0;
 	var rec_frame = 0;
@@ -265,10 +271,11 @@ define(['./jo/src/jo',
 			this.player.stand();
 		}
 		if(!recording && jo.input.once('SHIFT') && game.level.device){
-			jo.files.sfx.clkclk.play();
-			game.startRecording();
-		}else if(recording && jo.input.once('SHIFT') && game.level.device){
+			
 			jo.files.sfx.rrm.play();
+			game.startRecording();
+		}else if(recording && !jo.input.k('SHIFT') && game.level.device){
+			jo.files.sfx.clkclk.play();
 			game.stopRecording();
 		}
 	};
@@ -289,9 +296,7 @@ define(['./jo/src/jo',
 			game.freeze = !game.freeze;
 		}
 		if(jo.input.k('CTRL')|| jo.input.k('ALT')){
-			 if(jo.input.k('MOUSE1') ){
-				game.cam.subtract(jo.input.mouseMovement());
-			 }
+
 			 if(jo.input.k('UP')){
 				 game.map.shift(0,-1,{index: -1});
 			 }
@@ -304,21 +309,34 @@ define(['./jo/src/jo',
 			 if(jo.input.k('RIGHT')){
 				 game.map.shift(1,0,{index: -1});
 			 }
-		}else if(jo.input.k('MOUSE1')){
-			var p=game.cam.toMap(jo.input.mouse);
-			game.map.put(p.x, p.y, {index: pal});
-		}
-		if(jo.input.k('MOUSE2')){
-			var p=game.cam.toMap(jo.input.mouse);
-			game.map.put(p.x, p.y, {index: -1});
 		}
 		if(jo.input.once('TAB')){
 			pal = (pal+1)%5;
 		}
+		if(jo.tool==='pick'){
+			 if(jo.input.k('MOUSE1') ){
+				game.cam.subtract(jo.input.mouseMovement());
+			 }
+		}
+		
+		if(jo.tool==='drag'){
+			 if(jo.input.k('MOUSE1') ){
+				game.cam.subtract(jo.input.mouseMovement());
+			 }
+		}
+		if(jo.tool==='tile'){
+			if(jo.input.k('MOUSE1')){
+				var p=game.cam.toMap(jo.input.mouse);
+				game.map.put(p.x, p.y, {index: pal});
+			}
+			if(jo.input.k('MOUSE2')){
+				var p=game.cam.toMap(jo.input.mouse);
+				game.map.put(p.x, p.y, {index: -1});
+			}
+		}
 	};
 	game.handleCollision = function(){	
 		this.mapCollide3(game.map, this.get('player'));
-		//this.mapCollide(game.map, this.get('player'));
 		
 		for(i in this.enemy){
 			this.mapCollide(game.map, this.get(enemy[i]));
@@ -330,18 +348,8 @@ define(['./jo/src/jo',
 			}			
 		}
 		game.actorCollide2(this.get('player'), others);
-		
-		/**
-		for(i in this.records){
-			if(i != current_rec){
-				game.actorCollide(this.get('player'), this.get('record'+i));
-			}			
-		}
-		*/
 	};
 	game.actorCollide2 = function(actor, others){
-		
-		
 		for(var i in others){
 			var mov = [];
 			if(m2d.intersect.boxBox(others[i], actor)){
@@ -353,8 +361,7 @@ define(['./jo/src/jo',
 				}
 				else if(ac.y > oc.y){
 					y = {mov: 'S', axis: 'y',dir:  1, depth:others[i].pos.y+others[i].height-actor.pos.y};
-				}
-				
+				}				
 				if(ac.x <= oc.x){
 					x = {mov: 'W', axis: 'x',dir: -1, depth:actor.pos.x+actor.width-others[i].pos.x };
 				}
@@ -367,8 +374,6 @@ define(['./jo/src/jo',
 				}else if(x.depth>0){
 					mov.push(x);
 				}
-			}
-			if(mov.length>0){
 				var min = mov[0];
 				//test and find
 				for(var i in mov){
@@ -380,45 +385,20 @@ define(['./jo/src/jo',
 				if(min.mov==='N'){
 					actor.ground=true;
 				}
-			}
-				
-		}
-		
-
-
-
-
-		
-		
-	};
-	game.actorCollide = function(actor, b){
-		if(m2d.intersect.boxBox(b, actor)){
-			if(b.pos.y < actor.pos.y+(actor.height*1.1) && actor.v().y>=0 && actor.pos.y <b.pos.y
-					&& (actor.pos.x+actor.width >b.pos.x && actor.pos.x <b.pos.x+b.width)){
-				actor.pos.y = b.pos.y - actor.height;				
-				actor.hit();			
-			}
-			else if(b.pos.y+b.height > actor.pos.y && actor.pos.y+actor.height >b.pos.y+b.height 
-					&& !actor.wall && (actor.pos.x+actor.width <b.pos.x+b.width || actor.pos.x >b.pos.x)){
-				//actor.pos.y = b.pos.y + b.height;
-				}else if(b.pos.y+b.height > actor.pos.y && b.pos.y < actor.pos.y+(actor.height ) ){
-				if(b.pos.x < actor.pos.x+actor.width && actor.v().x>0 ){
-					actor.pos.x = b.pos.x-actor.width;
-				}else if(b.pos.x+b.width > actor.pos.x && actor.v().x<0){
-					actor.pos.x = b.pos.x+b.width;					
-				}
-			}			
-			
+			}				
 		}
 	};
-	
 	game.mapCollide3 = function(map, actor){
-		
 		var mf = map.getFrame();
 		actor.pos.x = Math.min(mf.width-actor.width,Math.max(0,actor.pos.x));
 		actor.pos.y = Math.min(mf.height,Math.max(0,actor.pos.y));
 		if(actor.pos.y > mf.height-actor.height){
-			game.stopLevel();
+			if(recording){
+				game.stopLevel();
+			}else{
+				game.stopLevel();
+			}
+
 		}
 		
 		var tiles = game.tiles = map.getIntersection({x:actor.pos.x, y: actor.pos.y, width: actor.width, height: actor.height});
@@ -528,5 +508,4 @@ define(['./jo/src/jo',
 			}	
 		}
 	};
-
 });
