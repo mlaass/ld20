@@ -39,10 +39,7 @@ define(['./jo/src/jo',
 		jo.input.reserved.push(jo.input.WHEEL_UP);
 		
 	});
-	var start = function(){
 
-		
-	};
 	game.ready(function(){
 		if(jo.dev){
 			jo.files.mute();
@@ -51,7 +48,11 @@ define(['./jo/src/jo',
 		game.state = 'start';
 		game.cam =new jo.Camera();
 		
-		game.ts = new jo.TileSet([0,1,2,3, [{i:4, t:800},{i:5, t: 600}]], 64,64, jo.files.img.tileset);
+		game.ts = new jo.TileSet([0,1,2,3, [{i:4, t:800},{i:5, t: 600}], 6], 64,64, jo.files.img.tileset);
+		game.ts.solid=[0,1,2,3];
+		game.ts.start = 5;
+		game.ts.exit = 4;
+		
 		game.map = new Map(game.ts, 128, 32, null);
 		for(var i=0; i< 10; i++){
 			game.map.put(i,5,{index: i%4});
@@ -60,7 +61,7 @@ define(['./jo/src/jo',
 		game.map.put(11,4,{index: i%4});
 		game.map.put(12,4,{index: i%4});
 		game.add(new Actor({name: 'player', position: new jo.Point(100, 64)}), 'player');
-		game.records= [];
+		game.records = [];
 		game.loadLevel(levels['start'], true);
 		
 		jo.files.music['LD20-replay_2'].play();		
@@ -88,7 +89,7 @@ define(['./jo/src/jo',
 		}
 		
 		if(jo.edit && jo.dev){
-			caption('Edit Mode | FPS: '+jo.screen.realFps);
+			caption('Edit Mode | FPS: '+parseInt(jo.screen.realFps)+' @ width:'+jo.screen.width+' height:'+jo.screen.height);
 			jo.files.img.test.draw({angle: (jo.screen.frames/60)*Math.PI,pivot: 'center'}, new jo.Point(32, 32), jo.screen);
 			
 			for(var i in game.tiles){
@@ -98,7 +99,7 @@ define(['./jo/src/jo',
 			game.drawEdit();	
 			
 		}else if(jo.dev){
-			caption('Play Mode | FPS: '+jo.screen.realFps);
+			caption('Play Mode | FPS: '+parseInt(jo.screen.realFps)+' @ width:'+jo.screen.width+' height:'+jo.screen.height);
 			jo.files.img.test.draw({pivot: 'center'}, new jo.Point(32, 32), jo.screen);
 		}
 	});
@@ -106,13 +107,13 @@ define(['./jo/src/jo',
 		game.centerCam(this.get('player').pos.clone());
 	};
 	game.centerCam = function(p){
-		var half = new jo.Point(jo.screen.width / 2, jo.screen.height*0.7);
+		var half = new jo.Point(jo.screen.width / 2, jo.screen.height*0.5);
 		game.cam.copy(p.minus(half));
 		var mf = this.map.getFrame();
 		
 		game.cam.copy(new jo.Point(
 				Math.min(mf.width - jo.screen.width, Math.max(0,game.cam.x)),									
-				Math.min(mf.height - jo.screen.height, Math.max(-128, game.cam.y))
+				Math.min(mf.height - jo.screen.height, Math.max(-64, game.cam.y))
 		));
 	};
 	game.drawEdit= function(){
@@ -130,9 +131,16 @@ define(['./jo/src/jo',
 		if(init){
 			game.initLevel();
 		}
+
+		
+		var s = game.map.find(game.ts.start);
+		var pl =game.get('player');
+		if(typeof s !== 'undefined'){
+			pl.moveTo(s.pos.plus(jo.point(16,0)));
+		}else{
+			pl.moveTo( new jo.Point(100, 64));
+		}
 		return game.level;
-		game.records = [];
-		game.resetRecording();
 	};
 	game.initLevel= function(){
 		game.records = [];
@@ -147,7 +155,7 @@ define(['./jo/src/jo',
 				game.switches.push(i);
 			}
 		}
-		game.level.start();
+		game.records = [];
 		game.resetRecording();
 	};
 	game.saveLevel = function(){
@@ -157,14 +165,15 @@ define(['./jo/src/jo',
 		//
 		lvl.data = game.map.data;
 		lvl.objects = {};
-
+		
 		for(var i in game.objects){
-			if(true || !i.match(/record/)){
+			if( !i.match(/record/)){
 				lvl.objects[i] = game.objects[i];
 			}
 		}
 		lvl.json = JSON.stringify(lvl);
-		
+		game.records = [];
+		game.resetRecording();
 		game.loadLevel(lvl);
 		return lvl;
 		
@@ -203,6 +212,11 @@ define(['./jo/src/jo',
 	var recording = false;
 	var current_rec = 0;
 	var rec_frame = 0;
+	game.deleteRecords= function(){
+		game.records=[];
+		game.resetRecording();
+		
+	};
 	game.resetRecording =function(){
 		recording = false;
 		current_rec = game.records.length;
@@ -311,11 +325,21 @@ define(['./jo/src/jo',
 			 }
 		}
 		if(jo.input.once('TAB')){
-			pal = (pal+1)%5;
+			pal = (pal+1)%game.map.tileSet.tiles.length;
 		}
 		if(jo.tool==='pick'){
-			 if(jo.input.k('MOUSE1') ){
-				game.cam.subtract(jo.input.mouseMovement());
+			if(jo.input.once('MOUSE1')){
+				for(var i in game.objects){
+					if(m2d.intersect.pointBox( game.cam.toWorld(jo.input.mouse), game.objects[i])){
+						game.selection= i;
+					}
+				}
+			}else if(jo.input.k('MOUSE1') ){
+				if(game.selection){
+					game.objects[game.selection].pos.copy(game.cam.toWorld(jo.input.mouse));
+				}
+			 }else{
+				 game.selection=false;
 			 }
 		}
 		
@@ -351,12 +375,11 @@ define(['./jo/src/jo',
 	};
 	game.actorCollide2 = function(actor, others){
 		for(var i in others){
-			var mov = [];
 			if(m2d.intersect.boxBox(others[i], actor)){
 				var ac = actor.pos.plus(jo.point(actor.width/2, actor.height/2)),
 				oc = others[i].pos.plus(jo.point(others[i].width/2, others[i].height/2));
 				var x, y;
-				if(ac.y <= oc.y){
+				if(ac.y <= oc.y ){
 					y = {mov: 'N', axis: 'y', dir: -1, depth: actor.pos.y+actor.height-others[i].pos.y };
 				}
 				else if(ac.y > oc.y){
@@ -368,23 +391,18 @@ define(['./jo/src/jo',
 				else if(ac.x >oc.x){
 					x = {mov: 'E', axis: 'x',dir:  1, depth:others[i].pos.x+others[i].width-actor.pos.x };
 				}
-				
+				var mov=false;
 				if(x.depth> y.depth && y.depth>=0){
-					mov.push(y);
-				}else if(x.depth>0){
-					mov.push(x);
+					mov=y;
+				}else if(x.depth>=0){
+					mov=x;
 				}
-				var min = mov[0];
-				//test and find
-				for(var i in mov){
-					if(min.depth > mov[i].depth){
-						min = mov[i].depth;
-					}				
-				}
-				actor.pos[min.axis]+= min.depth*min.dir;
-				if(min.mov==='N'){
-					actor.ground=true;
-				}
+				if(typeof mov=== 'object'){
+					actor.pos[mov.axis]+= mov.depth*mov.dir;
+					if(mov.mov ==='N' ){
+						actor.ground=true;
+					}
+				}				
 			}				
 		}
 	};
@@ -407,15 +425,15 @@ define(['./jo/src/jo',
 		}else{
 			var col=[], ti=[];
 			for(var i in tiles){
-				if(tiles[i].index >= 0){
+				if(jo.includes(game.ts.solid, tiles[i].index) || tiles[i].index == 4){
 					ti.push(i);
 					if(m2d.intersect.boxBox(tiles[i], actor)){
-						if(tiles[i].index == 4){
+						if(tiles[i].index == game.ts.exit){
 							game.levelDone();
 							jo.log('level done');
 						}else{
 							col.push(i);	
-								tiles[i].hit = "yellow";
+							tiles[i].hit = "yellow";
 						}
 					}
 				}

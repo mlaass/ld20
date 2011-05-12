@@ -104,6 +104,10 @@ define(['../jo/src/jo', '../jo/src/Object'],function(jo, Object){
 		},
 		stand: function(){
 			this.dir=0;
+		},
+		moveTo: function(p){
+			this.pos.copy(p);
+			this.lp.copy(p);
 		}
 	});
 	return jo.Actor;
