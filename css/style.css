@@ -57,7 +57,7 @@ background:linear-gradient(top, #83d2ff, #0157a0); /* W3C Standard */
 
 }
 #popup{
-
+z-index: 999;
 	background: rgba(255,255,255,0.8);
 
 }
